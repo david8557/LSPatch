@@ -21,10 +21,27 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+      continue-on-error: true
       with:
         submodules: 'recursive'
         fetch-depth: 0
+
+    - name: Initialize Submodules
+      continue-on-error: true
+      run: git submodule update --init --recursive
+
+    - name: Fix wrong checkouts
+      run: |
+        cd ./core/external/lsplant/lsplant/src/main/jni/external/dex_builder
+        git fetch
+        git checkout master
+        git submodule update --init --recursive
+        file_path="core/external/fmt/CMakeLists.txt"
+        file_content=$(<"$file_path")
+        updated_content=$(echo "$file_content" | sed 's/option(FMT_INSTALL "Generate the install target." ON)/option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})/')
+        updated_content=$(echo "$updated_content" | sed 's/cxx_std_11/cxx_variadic_templates/g')
+        echo "$updated_content" > "$file_path"
 
     - name: Write key
       if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
@@ -36,18 +53,6 @@ jobs:
           echo androidStoreFile='key.jks' >> gradle.properties
           echo ${{ secrets.KEY_STORE }} | base64 --decode > key.jks
         fi
-
-    - name: Checkout libxposed/api
-      uses: actions/checkout@v3
-      with:
-        repository: libxposed/api
-        path: libxposed/api
-
-    - name: Checkout libxposed/service
-      uses: actions/checkout@v3
-      with:
-        repository: libxposed/service
-        path: libxposed/service
 
     - name: Setup Java
       uses: actions/setup-java@v3
