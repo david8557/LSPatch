@@ -33,15 +33,15 @@ jobs:
 
     - name: Fix wrong checkouts
       run: |
-        cd ./core/external/lsplant/lsplant/src/main/jni/external/dex_builder
-        git fetch
-        git checkout master
-        git submodule update --init --recursive
         file_path="core/external/fmt/CMakeLists.txt"
         file_content=$(<"$file_path")
         updated_content=$(echo "$file_content" | sed 's/option(FMT_INSTALL "Generate the install target." ON)/option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})/')
         updated_content=$(echo "$updated_content" | sed 's/cxx_std_11/cxx_variadic_templates/g')
         echo "$updated_content" > "$file_path"
+        cd ./core/external/lsplant/lsplant/src/main/jni/external/dex_builder
+        git fetch
+        git checkout master
+        git submodule update --init --recursive
 
     - name: Write key
       if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
