@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [ master ]
-  pull_request:
 
 jobs:
   build:
@@ -28,12 +27,12 @@ jobs:
         fetch-depth: 0
 
     - name: Initialize Submodules
-      continue-on-error: true
       run: git submodule update --init --recursive --no-fetch --checkout
+      continue-on-error: true
 
-    - name: Fix wrong checkouts
+    - name: Patch bad submodules
       run: |
-        file_path="core/external/fmt/CMakeLists.txt"
+        file_path="./core/external/fmt/CMakeLists.txt"
         file_content=$(<"$file_path")
         updated_content=$(echo "$file_content" | sed 's/option(FMT_INSTALL "Generate the install target." ON)/option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})/')
         updated_content=$(echo "$updated_content" | sed 's/cxx_std_11/cxx_variadic_templates/g')
@@ -42,7 +41,10 @@ jobs:
         git rm --cached "test/src/main/jni/external/lsparself"
         git rm --cached "test/src/main/jni/external/lsprism"
         git submodule update --init --recursive --no-fetch --checkout
-        cd ./lsplant/src/main/jni/external/dex_builder/external/parallel_hashmap/parallel_hashmap/
+        cd ./lsplant/src/main/jni/external/dex_builder/
+        git checkout `git rev-parse HEAD`
+        git submodule update --init --recursive --no-fetch --checkout
+        cd ./external/parallel_hashmap/parallel_hashmap/
 
     - name: Write key
       if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
@@ -77,6 +79,15 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+      with:
+        version: 1.12.0
+
+    - name: Remove Android SDK's CMake
+      shell: bash
+      run: rm -rf $ANDROID_HOME/cmake
+
     - name: Build dependencies
       working-directory: libxposed
       run: |
@@ -96,19 +107,19 @@ jobs:
         ./gradlew buildAll
 
     - name: Upload Debug artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: lspatch-debug
         path: out/debug/*
 
     - name: Upload Release artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: lspatch-release
         path: out/release/*
 
     - name: Upload mappings
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mappings
         path: |
@@ -116,7 +127,7 @@ jobs:
           manager/build/outputs/mapping
 
     - name: Upload symbols
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: symbols
         path: |

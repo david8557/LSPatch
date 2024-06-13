@@ -31,25 +31,7 @@ Note: debug builds are only available in Github Actions
 
 ## Build Instructions
 
-- Clone this repository using `git`
-- Install Java 17
-- `cd` to the repository, and run `git submodule update --init --recursive` to retrieve all necessary submodules 
-- Add missing options, build dependencies, and start job `buildAll`
-
-```shell
-cd libxposed/api
-echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
-./gradlew :api:publishApiPublicationToMavenLocal
-cd ../service
-echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
-./gradlew :interface:publishInterfacePublicationToMavenLocal
-cd ../..
-echo 'org.gradle.parallel=true' >> gradle.properties
-echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
-echo 'android.native.buildOutput=verbose' >> gradle.properties
-./gradlew buildAll
-```
-
+- See [main.yml](.github/workflows/main.yml) for all the build steps and details
 - After a successful build, output `jar` and `apk` files are in `out/debug` and `out/release`
 - Mappings are in `patch-loader/build/outputs/mapping` and `manager/build/outputs/mapping`
 - Symbols are in `patch-loader/build/symbols`
