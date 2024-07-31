@@ -18,4 +18,3 @@
 }
 -dontwarn com.google.auto.value.AutoValue$Builder
 -dontwarn com.google.auto.value.AutoValue
--dontwarn org.lsposed.lspatch.util.ModuleLoader
