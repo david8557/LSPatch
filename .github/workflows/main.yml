@@ -94,8 +94,7 @@ jobs:
         cd api
         echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
         ./gradlew :api:publishApiPublicationToMavenLocal
-        cd ..
-        cd service
+        cd ../service
         echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
         ./gradlew :interface:publishInterfacePublicationToMavenLocal
 

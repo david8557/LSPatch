@@ -59,7 +59,7 @@ val androidTargetCompatibility by extra(JavaVersion.VERSION_21)
 val androidCmakeVersion by extra("3.28.0+")
 
 tasks.register<Delete>("clean") {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory)
 }
 
 listOf("Debug", "Release").forEach { variant ->
