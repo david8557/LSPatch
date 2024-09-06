@@ -15,20 +15,35 @@ namespace lspd {
     std::string apkPath;
     std::string redirectPath;
 
-    CREATE_HOOK_STUB_ENTRY(
+    inline static lsplant::Hooker<
             "__openat",
-            int, __openat,
-            (int fd, const char* pathname, int flag, int mode), {
-                if (pathname == apkPath) {
-                    LOGD("redirect openat");
-                    return backup(fd, redirectPath.c_str(), flag, mode);
-                }
-                return backup(fd, pathname, flag, mode);
-            });
+            int(int, const char*, int, int)
+    > __openat_ = +[](int fd, const char* pathname, int flag, int mode) {
+        if (pathname == apkPath) {
+            LOGD("redirect openat");
+            return __openat_(fd, redirectPath.c_str(), flag, mode);
+        }
+        return __openat_(fd, pathname, flag, mode);
+    };
 
     LSP_DEF_NATIVE_METHOD(void, SigBypass, enableOpenatHook, jstring origApkPath, jstring cacheApkPath) {
-        auto sym_openat = SandHook::ElfImg("libc.so").getSymbAddress<void *>("__openat");
-        auto r = HookSymNoHandle(handler, sym_openat, __openat);
+        // auto sym_openat = SandHook::ElfImg("libc.so").getSymbAddress<void *>("__openat");
+        // FIXME: This handle is dynamic and temporarily generated from a special InitInfo.
+        auto r = lsplant::HookHandler(lsplant::InitInfo {
+                .inline_hooker = [](auto t, auto r) {
+                    void *bk = nullptr;
+                    return HookFunction(t, r, &bk) == RS_SUCCESS ? bk : nullptr;
+                },
+                .inline_unhooker = [](auto t) {
+                    return UnhookFunction(t) == RT_SUCCESS;
+                },
+                .art_symbol_resolver = [](auto symbol) {
+                    return SandHook::ElfImg("libc.so").getSymbAddress<void *>(symbol);
+                },
+                .art_symbol_prefix_resolver = [](auto symbol) {
+                    return SandHook::ElfImg("libc.so").getSymbPrefixFirstAddress(symbol);
+                },
+        }).hook(__openat_);
         if (!r) {
             LOGE("Hook __openat fail");
             return;

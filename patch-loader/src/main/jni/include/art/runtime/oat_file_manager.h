@@ -26,36 +26,38 @@
 using namespace lsplant;
 
 namespace art {
-    CREATE_MEM_HOOK_STUB_ENTRY(
+    inline static Hooker<
             "_ZN3art14OatFileManager25RunBackgroundVerificationERKNSt3__16vectorIPKNS_7DexFileENS1_9allocatorIS5_EEEEP8_jobjectPKc",
-            void, RunBackgroundVerificationWithContext,
-            (void * thiz, const std::vector<const void *> &dex_files,
-                    jobject class_loader,
-                    const char *class_loader_context), {
+            void(void*, const std::vector<const void *> &, jobject, const char *)
+    > RunBackgroundVerificationWithContext_ =
+            +[](void* thiz, const std::vector<const void *> &dex_files,
+                jobject class_loader,
+                const char *class_loader_context) -> void {
                 if (lspd::Context::GetInstance()->GetCurrentClassLoader() == nullptr) {
                     LOGD("Disabled background verification");
                     return;
                 }
-                backup(thiz, dex_files, class_loader, class_loader_context);
-            });
+                RunBackgroundVerificationWithContext_(thiz, dex_files, class_loader, class_loader_context);
+            };
 
-    CREATE_MEM_HOOK_STUB_ENTRY(
+    inline static Hooker<
             "_ZN3art14OatFileManager25RunBackgroundVerificationERKNSt3__16vectorIPKNS_7DexFileENS1_9allocatorIS5_EEEEP8_jobject",
-            void, RunBackgroundVerification,
-            (void * thiz, const std::vector<const void *> &dex_files,
-                    jobject class_loader), {
+            void(void*, const std::vector<const void *> &, jobject)
+    > RunBackgroundVerification_ =
+            +[](void* thiz, const std::vector<const void *> &dex_files,
+                jobject class_loader) -> void {
                 if (lspd::Context::GetInstance()->GetCurrentClassLoader() == nullptr) {
                     LOGD("Disabled background verification");
                     return;
                 }
-                backup(thiz, dex_files, class_loader);
-            });
+                RunBackgroundVerification_(thiz, dex_files, class_loader);
+            };
 
 
     static void DisableBackgroundVerification(const lsplant::HookHandler &handler) {
         const int api_level = lspd::GetAndroidApiLevel();
         if (api_level >= __ANDROID_API_Q__) {
-            HookSyms(handler, RunBackgroundVerificationWithContext, RunBackgroundVerification);
+            handler.hook(RunBackgroundVerificationWithContext_, RunBackgroundVerification_);
         }
     }
 }
