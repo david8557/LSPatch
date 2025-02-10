@@ -37,6 +37,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -68,6 +70,8 @@ public class LSPatch {
 
     @Parameter(names = {"-o", "--output"}, description = "Output directory")
     private String outputPath = ".";
+    @Parameter(names = {"-s", "--source"}, description = "Source original apk")
+    private String originalApk = "";
 
     @Parameter(names = {"-f", "--force"}, description = "Force overwrite exists output file")
     private boolean forceOverwrite = false;
@@ -168,6 +172,7 @@ public class LSPatch {
     }
 
     public void patch(File srcApkFile, File outputFile) throws PatchError, IOException {
+        File originalSrcApkFile = new File(originalApk).getAbsoluteFile();
         if (!srcApkFile.exists())
             throw new PatchError("The source apk file does not exit. Please provide a correct path.");
 
@@ -207,7 +212,8 @@ public class LSPatch {
 
             String originalSignature = null;
             if (sigbypassLevel > 0) {
-                originalSignature  = ApkSignatureHelper.getApkSignInfo(srcApkFile.getAbsolutePath());
+//                originalSignature  = ApkSignatureHelper.getApkSignInfo(srcApkFile.getAbsolutePath());
+                originalSignature  = ApkSignatureHelper.getApkSignInfo(originalSrcApkFile.getAbsolutePath());
                 if (originalSignature == null || originalSignature.isEmpty()) {
                     throw new PatchError("get original signature failed");
                 }
